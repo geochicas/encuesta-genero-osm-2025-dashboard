@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Resultados encuesta de género Geochicas 2025</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<style>
+:root {
+  --bg:#f7f3f5; --ink:#1c1b1e; --muted:#6f6a72;
+  --p1:#3c0637; --p2:#7b2255; --p3:#2a525e; --p4:#4587b8; --p5:#f7cc58;
+  --card:#fff; --border:rgba(28,27,30,.12); --shadow:0 14px 40px rgba(28,27,30,.10); --r:18px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+.app{display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+@media(max-width:1100px){.app{grid-template-columns:1fr} .side{position:sticky;top:0;z-index:10}}
+.side{padding:16px;border-right:1px solid var(--border);background:linear-gradient(180deg, rgba(60,6,55,.10), rgba(60,6,55,0))}
+.brand{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:22px;background:#fff;box-shadow:var(--shadow)}
+.logo{width:64px;height:64px;border-radius:16px;border:1px solid var(--border);display:grid;place-items:center;overflow:hidden;background:#fff}
+.logo svg{width:100%;height:100%;object-fit:contain}
+.brand h1{margin:0;font-size:14px;line-height:1.2;color:var(--p1);letter-spacing:-.2px}
+.brand p{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.35}
+.seg{display:flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:#fff}
+.seg button{border:0;background:transparent;padding:8px 10px;font-weight:950;color:var(--muted);cursor:pointer}
+.seg button[aria-selected="true"]{background:rgba(247,204,88,.18);color:var(--ink)}
+.nav{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.nav button{text-align:left;border:1px solid var(--border);background:#fff;padding:10px 12px;border-radius:14px;cursor:pointer;
+  font-weight:1000;color:var(--p1);display:flex;align-items:center;justify-content:space-between;gap:10px;transition:transform 120ms ease}
+.nav button:hover{transform:translateY(-1px)}
+.nav button[aria-selected="true"]{background:rgba(123,34,85,.10);border-color:rgba(123,34,85,.35)}
+.panel{margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:18px;background:#fff}
+.panel h3{margin:0 0 8px;font-size:12px;color:var(--muted);letter-spacing:.02em;text-transform:uppercase}
+label{font-size:12px;color:var(--muted);font-weight:950}
+select{width:100%;border:1px solid var(--border);border-radius:14px;padding:9px 10px;background:#fff;font-weight:900;color:var(--ink);outline:none}
+.row{display:grid;grid-template-columns:1fr;gap:10px}
+.reset{width:100%;margin-top:10px;border:1px solid var(--border);border-radius:14px;padding:10px 12px;
+  background:linear-gradient(180deg, rgba(247,204,88,.35), rgba(247,204,88,.12));font-weight:1000;cursor:pointer}
+.reset:hover{transform:translateY(-1px)}
+.details{margin-top:10px}
+summary{cursor:pointer;color:var(--p1);font-weight:1000;font-size:12px}
+.main{padding:18px 18px 44px}
+.state{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:1px solid var(--border);background:#fff;border-radius:999px;padding:7px 10px;font-size:12px;color:var(--muted);font-weight:950}
+.pill b{color:var(--ink)}
+.grid{margin-top:12px;display:grid;grid-template-columns:1fr;gap:12px}
+.cards{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
+@media(max-width:1100px){.cards{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
+.card h2{margin:0 0 6px;font-size:18px;color:var(--p1);letter-spacing:-.2px}
+.lede{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.55;max-width:110ch}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi .box{border:1px solid var(--border);border-radius:16px;padding:10px 12px;background:linear-gradient(180deg,rgba(42,82,94,.08),rgba(42,82,94,0))}
+.kpi .n{font-size:22px;font-weight:1000;color:var(--p1)}
+.kpi .t{font-size:12px;color:var(--muted);font-weight:950}
+.note{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.45}
+.viz{width:100%;overflow:hidden}
+.tooltip{position:fixed;pointer-events:none;background:rgba(28,27,30,.92);color:#fff;padding:8px 10px;border-radius:12px;font-size:12px;line-height:1.35;max-width:380px;
+  opacity:0;transform:translateY(6px);transition:opacity 120ms ease, transform 120ms ease;z-index:9999}
+.tooltip.show{opacity:1;transform:translateY(0)}
+.clickable{cursor:pointer}
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:12px;align-items:stretch}
+@media(max-width:1100px){.hero{grid-template-columns:1fr}}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.stat{border:1px solid var(--border);border-radius:16px;padding:10px 12px;background:linear-gradient(180deg,rgba(123,34,85,.06),rgba(123,34,85,0))}
+.stat .k{font-size:12px;color:var(--muted);font-weight:950}
+.stat .v{font-size:18px;font-weight:1000;color:var(--p1);margin-top:2px}
+.callout{border:1px dashed rgba(28,27,30,.25);border-radius:16px;padding:12px;background:rgba(69,135,184,.06)}
+.bullets{margin:10px 0 0;padding-left:18px;color:var(--ink)}
+.bullets li{margin:6px 0;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   version="1.1"
+   id="svg2"
+   width="126.96"
+   height="103.7012"
+   viewBox="0 0 126.96 103.7012"
+   sodipodi:docname="Logo-geochicas-cuadrado.ai"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs6">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath18">
+      <path
+         d="M 0,77.776 H 95.22 V 0 H 0 Z"
+         id="path16" />
+    </clipPath>
+  </defs>
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <g
+     id="g8"
+     inkscape:groupmode="layer"
+     inkscape:label="Logo-geochicas-cuadrado"
+     transform="matrix(1.3333333,0,0,-1.3333333,0,103.7012)">
+    <path
+       d="M 0,0 H 95.22 V 77.776 H 0 Z"
+       style="fill:#fec93d;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       id="path10" />
+    <g
+       id="g12">
+      <g
+         id="g14"
+         clip-path="url(#clipPath18)">
+        <g
+           id="g20"
+           transform="translate(19.9262,17.8605)">
+          <path
+             d="M 0,0 C 0,-1.012 -0.214,-1.666 -0.641,-1.964 -1.07,-2.261 -2.002,-2.41 -3.437,-2.41 c -1.772,0 -2.819,0.268 -3.143,0.802 -0.323,0.536 -0.484,2.262 -0.484,5.179 0,2.165 0.18,3.467 0.541,3.906 0.36,0.439 1.437,0.659 3.231,0.659 1.338,0 2.195,-0.14 2.572,-0.419 C -0.345,7.438 -0.156,6.8 -0.156,5.803 V 5.412 H 2.745 L 2.734,5.758 c 0,1.935 -0.365,3.227 -1.094,3.878 -0.73,0.651 -2.18,0.977 -4.353,0.977 -2.982,0 -4.943,-0.396 -5.881,-1.189 C -9.531,8.632 -10,6.979 -10,4.464 c 0,-4.271 0.346,-6.897 1.038,-7.879 0.692,-0.982 2.541,-1.473 5.546,-1.473 2.649,0 4.359,0.311 5.133,0.932 0.774,0.621 1.162,1.992 1.162,4.112 v 0.525 h -2.903 z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path22" />
+        </g>
+        <g
+           id="g24"
+           transform="translate(34.771,22.1234)">
+          <path
+             d="m 0,0 h -7.142 v 6.216 h -2.89 V -9.018 h 2.89 v 6.585 H 0 V -9.018 H 2.89 V 6.216 l -2.89,0 z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path26" />
+        </g>
+        <path
+           d="m 40.455,28.339 h 2.89 V 13.106 h -2.89 z"
+           style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           id="path28" />
+        <g
+           id="g30"
+           transform="translate(55.5894,17.8605)">
+          <path
+             d="m 0,0 c 0,-1.012 -0.214,-1.666 -0.641,-1.964 -0.428,-0.297 -1.361,-0.446 -2.796,-0.446 -1.772,0 -2.819,0.268 -3.142,0.802 -0.324,0.536 -0.485,2.262 -0.485,5.179 0,2.165 0.179,3.467 0.541,3.906 0.36,0.439 1.437,0.659 3.231,0.659 1.338,0 2.195,-0.14 2.571,-0.419 C -0.345,7.438 -0.158,6.8 -0.158,5.803 V 5.412 H 2.745 L 2.734,5.758 c 0,1.935 -0.365,3.227 -1.094,3.878 -0.73,0.651 -2.18,0.977 -4.353,0.977 -2.982,0 -4.943,-0.396 -5.881,-1.189 C -9.531,8.632 -10,6.979 -10,4.464 c 0,-4.271 0.347,-6.897 1.039,-7.879 0.691,-0.982 2.54,-1.473 5.546,-1.473 2.648,0 4.359,0.311 5.133,0.932 0.774,0.621 1.161,1.992 1.161,4.112 v 0.525 h -2.902 z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path32" />
+        </g>
+        <g
+           id="g34"
+           transform="translate(63.727,18.1619)">
+          <path
+             d="M 0,0 2.589,7.934 5.224,0 Z M 0.38,10.177 -4.686,-5.056 h 3.057 l 0.948,2.924 H 5.892 L 6.864,-5.056 H 9.865 L 4.721,10.177 Z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path36" />
+        </g>
+        <g
+           id="g38"
+           transform="translate(85.6966,21.0299)">
+          <path
+             d="m 0,0 c -0.665,0.521 -2.132,0.844 -4.402,0.971 -1.919,0.104 -3.049,0.253 -3.392,0.446 -0.342,0.194 -0.515,0.77 -0.515,1.73 0,0.811 0.211,1.343 0.632,1.596 0.42,0.253 1.315,0.379 2.684,0.379 1.161,0 1.897,-0.109 2.209,-0.329 0.313,-0.219 0.503,-0.757 0.57,-1.612 0,-0.067 0.007,-0.171 0.022,-0.313 h 2.823 v 0.581 c 0,1.576 -0.398,2.637 -1.194,3.18 -0.797,0.544 -2.34,0.815 -4.631,0.815 -2.419,0 -4.031,-0.296 -4.838,-0.888 -0.807,-0.591 -1.21,-1.775 -1.21,-3.553 0,-1.741 0.335,-2.876 1.003,-3.404 0.67,-0.529 2.211,-0.863 4.621,-1.005 l 1.595,-0.1 c 0.901,-0.053 1.486,-0.199 1.759,-0.441 0.27,-0.242 0.407,-0.73 0.407,-1.467 0,-0.997 -0.179,-1.633 -0.536,-1.908 -0.357,-0.276 -1.184,-0.413 -2.477,-0.413 -1.66,0 -2.676,0.119 -3.048,0.357 -0.371,0.238 -0.557,0.889 -0.557,1.953 l -0.012,0.323 h -2.812 l 0.01,-0.558 c 0,-1.77 0.393,-2.946 1.179,-3.526 0.785,-0.581 2.375,-0.871 4.77,-0.871 2.664,0 4.385,0.296 5.167,0.888 0.781,0.591 1.172,1.899 1.172,3.922 C 1,-1.603 0.666,-0.521 0,0"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path40" />
+        </g>
+        <g
+           id="g42"
+           transform="translate(21.4113,48.4718)">
+          <path
+             d="m 0,0 v -4.367 h 7.842 l -0.023,-1.28 c 0,-2.668 -0.438,-4.361 -1.314,-5.078 -0.876,-0.714 -2.93,-1.072 -6.162,-1.072 -3.322,0 -5.441,0.422 -6.357,1.268 -0.912,0.846 -1.37,2.816 -1.37,5.911 l -0.046,4 0.023,3.132 c 0,3.155 0.461,5.16 1.383,6.012 0.923,0.855 3.098,1.282 6.528,1.282 3.155,0 5.125,-0.248 5.909,-0.743 0.785,-0.496 1.23,-1.764 1.338,-3.807 h 5.99 c 0,4.054 -0.806,6.671 -2.423,7.852 -1.616,1.182 -5.197,1.773 -10.747,1.773 -4.236,0 -7.238,-0.38 -9.007,-1.142 -1.768,-0.763 -3.087,-2.242 -3.955,-4.436 -0.702,-1.798 -1.052,-6.112 -1.052,-12.941 0,-5.349 0.877,-8.893 2.629,-10.632 1.753,-1.738 5.329,-2.606 10.723,-2.606 5.885,0 9.676,0.652 11.375,1.953 1.699,1.305 2.549,4.213 2.549,8.725 l -0.091,6.195 H 0 Z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path44" />
+        </g>
+        <g
+           id="g46"
+           transform="translate(44.9426,45.6812)">
+          <path
+             d="M 0,0 H 14.633 V 4.369 H 0 v 8.046 H 15.434 V 17.4 H -5.921 v -31.209 h 21.492 v 4.984 L 0,-8.825 Z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path48" />
+        </g>
+        <g
+           id="g50"
+           transform="translate(80.7998,53.0082)">
+          <path
+             d="m 0,0 c 0,2.925 -2.536,5.298 -5.659,5.298 -3.126,0 -5.662,-2.373 -5.662,-5.298 0,-2.928 2.536,-5.301 5.662,-5.301 C -2.536,-5.301 0,-2.928 0,0"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path52" />
+        </g>
+        <g
+           id="g54"
+           transform="translate(75.2685,64.7693)">
+          <path
+             d="m 0,0 c -6.863,0 -12.426,-5.21 -12.426,-11.633 0,-2.319 0.727,-4.725 1.974,-6.539 l 3.264,-5.389 5.763,0.013 v 3.756 c -3.872,0.572 -7.463,4.005 -7.463,8.159 0,4.553 3.985,8.24 8.847,8.24 4.861,0 8.784,-3.687 8.784,-8.24 0,-4.055 -3.394,-7.424 -7.265,-8.113 v -3.815 l 5.818,0.003 3.154,5.386 c 0.623,0.906 1.12,2.023 1.456,3.079 0.338,1.055 0.519,2.238 0.519,3.398 C 12.425,-5.272 6.861,0 0,0"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path56" />
+        </g>
+        <g
+           id="g58"
+           transform="translate(76.7666,31.1399)">
+          <path
+             d="M 0,0 5.223,7.688 -0.02,7.703 Z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path60" />
+        </g>
+        <g
+           id="g62"
+           transform="translate(73.8427,31.1997)">
+          <path
+             d="M 0,0 V 7.623 L -5.324,7.628 Z"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="path64" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
+</div>
+      <div>
+        <h1>Resultados encuesta de género Geochicas 2025</h1>
+        <p></p>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <div style="font-size:12px;color:var(--muted);font-weight:950">Modo</div>
+      <div class="seg" role="tablist" aria-label="Modo de dashboard">
+        <button id="modePublic" aria-selected="true">Público</button>
+        <button id="modeInternal" aria-selected="false">Interno</button>
+      </div>
+    </div>
+
+    <nav class="nav" role="tablist" aria-label="Secciones">
+      <button class="navbtn" data-tab="inicio" aria-selected="true"><span>0) Inicio</span><span>↗</span></button>
+      <button class="navbtn" data-tab="mapa" aria-selected="false"><span>1) Mapa</span><span>↗</span></button>
+      <button class="navbtn" data-tab="demografia" aria-selected="false"><span>2) Demografía</span><span>↗</span></button>
+      <button class="navbtn" data-tab="relaciones" aria-selected="false"><span>3) Género ↔ Violencia</span><span>↗</span></button>
+      <button class="navbtn" data-tab="conclusiones" aria-selected="false"><span>4) Conclusiones</span><span>↗</span></button>
+    </nav>
+
+    <div class="panel">
+      <h3>Filtros</h3>
+      <div class="row">
+        <div>
+          <label for="fGender">Género</label><br/>
+          <select id="fGender"></select>
+        </div>
+        <div>
+          <label for="fViol">Violencia (tipo)</label><br/>
+          <select id="fViol"></select>
+        </div>
+      </div>
+
+      <details class="details" id="adv">
+        <summary>Filtros avanzados (interseccionalidad)</summary>
+        <div style="margin-top:10px" class="row">
+          <div>
+            <label for="fCountry">País (por mapa)</label><br/>
+            <select id="fCountry"></select>
+          </div>
+          <div>
+            <label for="fAge">Rango de edad</label><br/>
+            <select id="fAge"></select>
+          </div>
+          <div>
+            <label for="fNeuro">Neurodivergencia</label><br/>
+            <select id="fNeuro"></select>
+          </div>
+          <div>
+            <label for="fLang">Idioma</label><br/>
+            <select id="fLang"></select>
+          </div>
+        </div>
+      </details>
+
+      <button class="reset" id="reset">Reset filtros</button>
+      <div class="note" id="filterNote"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="state" id="stateBar"></div>
+
+    <div class="grid">
+      <section class="card" id="heroCard">
+        <div class="hero">
+          <div>
+            <h2>La encuesta (qué fue y por qué importa)</h2>
+            <p class="lede" id="introText"></p>
+            <div class="callout" id="publicHook" style="display:none">
+              <b style="color:var(--p1)">Lectura pública:</b> el objetivo es convertir datos en conversación comunitaria (y cambios concretos), no en una infografía estática.
+            </div>
+          </div>
+          <div>
+            <div class="statgrid" id="statGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="cards">
+        <section class="card">
+          <h2 id="panelTitle"></h2>
+          <p class="lede" id="panelLede"></p>
+          <div class="viz" id="viz"></div>
+          <div class="note" id="panelNote"></div>
+        </section>
+
+        <aside class="card">
+          <h2>Lectura rápida</h2>
+          <div class="kpi" id="kpis"></div>
+          <div class="note" id="insights"></div>
+        </aside>
+      </div>
+
+      <section class="card" id="conclusionCard" style="display:none">
+        <h2>Conclusiones y oportunidades de mejora</h2>
+        <p class="lede">Extraídas de comentarios opcionales y sugerencias.</p>
+        <ul class="bullets" id="conclusionList"></ul>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = {"palette": {"bg": "#f7f3f5", "ink": "#1c1b1e", "muted": "#6f6a72", "p1": "#3c0637", "p2": "#7b2255", "p3": "#2a525e", "p4": "#4587b8", "p5": "#f7cc58"}, "intro": {"languages": "Español, Inglés, Francés y Portugués", "respondents": 280, "top_countries": ["España", "Francia", "Alemania"], "cis_men_share": "~80%", "age_top": "31–45 años", "avg_years": 7.98, "unbalanced_share": "68%", "updates": "Actualizamos preguntas y categorías, así como también agregamos nuevas preguntas sobre neurodivergencia, discapacidad, entre otras."}, "conclusions": ["Asegurarse de que el código de conducta sea claro y se cumpla.", "Crear protocolos de apoyo visibles y fáciles de seguir para quienes enfrenten a situaciones de hostilidad o discriminación.", "Concienciar a la comunidad sobre la importancia del respeto, la diversidad y la inclusión.", "Ofrecer acompañamiento y apoyo activo a personas nuevas o a grupos menos representados, ayudando a superar barreras técnicas, culturales o de idioma."], "records": [{"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Costa Rica", "residence": "Costa Rica", "age": "16-30", "neuro": "Cuestionando", "disability": "No", "languages": ["Español"], "years": null}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Sí", "disability": "No lo sé", "languages": ["Inglés"], "years": 0.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Brasil", "residence": "Brasil", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Portugues"], "years": 0.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Colombia", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español/Inglés"], "years": 0.0}, {"gender": "No quiero responder", "violence": ["Sí, por raza / etnia", "Sí, por lugar de origen", "Sí, por orientación sexual"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "Sí", "disability": "Sí", "languages": ["Francés", "Inglés"], "years": 0.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Bélgica", "residence": "Bélgica", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Holandés", "Inglés", "Francés"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Costa Rica", "residence": "Costa Rica", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Español e Inglés"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "16-30", "neuro": "No", "disability": "Cuestionando", "languages": ["Inglés"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Inglés"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Finlandia", "residence": "Finlandia", "age": "16-30", "neuro": "Cuestionando", "disability": "No", "languages": ["Finés", "Inglés", "Japonés", "Francés", "Sueco"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Nepal", "residence": "Nepal", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Nepalí", "Inglés"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés", "Francés"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Holandés Inglés"], "years": 1.0}, {"gender": "Mujer trans", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No lo sé", "disability": "Sí", "languages": ["Inglés"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Francés", "Holandés", "Inglés", "Alemán"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Italiano", "Inglés"], "years": 1.0}, {"gender": "Mujer trans", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Inglés", "Sueco", "Holandés"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Argentina", "residence": "Argentina", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["español"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "Colombia", "residence": "Colombia", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Español"], "years": 1.0}, {"gender": "Mujer cis", "violence": ["Sí, por raza / etnia", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Colombia", "residence": "Colombia", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Español"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["español", "francés", "portugués", "Inglés"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "galego", "Inglés"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés Inglés Español Italiano"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "México", "residence": "Estados Unidos", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español e Inglés"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "México", "residence": "México", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["ESPAÑOL"], "years": 1.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": false, "notValued": false, "exposure": true, "origin": "México", "residence": "México", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés en un 40%"], "years": 1.0}, {"gender": "Género fluido", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "Argentina", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés", "Alemán", "Español"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No lo sé", "disability": "Sí", "languages": ["Alemán", "Inglés", "Italiano", "Español", "Francés", "Ruso"], "years": 1.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Paraguay", "residence": "Paraguay", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Español", "Inglés"], "years": 1.0}, {"gender": "Mujer cis", "violence": ["Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Brasil", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés", "Portugués"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Chile", "residence": "Chile", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 1.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por lugar de origen", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": false, "notValued": true, "exposure": true, "origin": "Colombia", "residence": "Ecuador", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "frances"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Ecuador", "residence": "Ecuador", "age": "46-60", "neuro": "No lo sé", "disability": "No", "languages": ["Español. Inglés."], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés Inglés"], "years": 1.0}, {"gender": "Hombre cis", "violence": ["Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "India", "residence": "India", "age": "46-60", "neuro": "No lo sé", "disability": "No", "languages": ["Malabar"], "years": 1.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "México", "residence": "México", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "français"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "Cuestionando", "disability": "No", "languages": ["Español", "Vasco", "Catalán"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Venezuela", "residence": "Venezuela", "age": "61+", "neuro": "No", "disability": "No", "languages": ["Español"], "years": 1.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 2.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Bolivia", "residence": "Bolivia", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Español"], "years": 2.0}, {"gender": "No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Canadá", "residence": "Canadá", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Inglés"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Canadá", "residence": "Canadá", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Inglés"], "years": 2.0}, {"gender": "No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "16-30", "neuro": "Cuestionando", "disability": "No", "languages": ["Español", "Euskera", "Inglés"], "years": 2.0}, {"gender": "Mujer trans", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "16-30", "neuro": "Sí", "disability": "Sí", "languages": ["Inglés"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 2.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Hungría", "residence": "Noruega", "age": "16-30", "neuro": "No quiero responder", "disability": "No quiero responder", "languages": ["Inglés", "Húngaro"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "India", "residence": "India", "age": "16-30", "neuro": "Cuestionando", "disability": "No", "languages": ["Bengalí", "Inglés", "Hindi"], "years": 2.0}, {"gender": "Mujer cis", "violence": ["Sí, por idioma", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": false, "notValued": false, "exposure": true, "origin": "México", "residence": "México", "age": "16-30", "neuro": "Cuestionando", "disability": "No", "languages": ["Español"], "years": 2.0}, {"gender": "Hombre cis", "violence": ["Otro"], "difficulty": false, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Inglés", "Español"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 2.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Colombia", "residence": "Colombia", "age": "31-45", "neuro": "Sí", "disability": "No lo sé", "languages": ["3"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés", "Español"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Finlandia", "residence": "Finlandia", "age": "31-45", "neuro": "Sí", "disability": "Cuestionando", "languages": ["Finés", "Inglés", "Sueco"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés", "Español", "Italiano", "Inglés"], "years": 2.0}, {"gender": "Otro", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "Sí", "disability": "Sí", "languages": ["Inglés", "Español"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Colombia", "residence": "Colombia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 2.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés medio"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés", "Español"], "years": 2.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "-15", "neuro": "No quiero responder", "disability": "No quiero responder", "languages": ["Francés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "-15", "neuro": "Sí", "disability": "No lo sé", "languages": ["Francés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 3.0}, {"gender": "Mujer trans", "violence": ["Sí, por género"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Austria", "residence": "Austria", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Holandés", "Inglés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Chile", "residence": "Chile", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Español"], "years": 3.0}, {"gender": "No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Inglés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Finlandia", "residence": "Finlandia", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Finés", "Sueco", "Inglés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Francés", "un poco de Inglés", "algunas nociones de Español y Alemán"], "years": 3.0}, {"gender": "Otro", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Cuestionando", "disability": "Sí", "languages": ["Inglés", "Alemán"], "years": 3.0}, {"gender": "Otro", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No lo sé", "disability": "No quiero responder", "languages": ["Inglés", "Alemán"], "years": 3.0}, {"gender": "Mujer trans / No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Tailandés"], "years": 3.0}, {"gender": "Mujer trans / No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Sí", "disability": "Sí", "languages": ["Inglés"], "years": 3.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Colombia", "residence": "Colombia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "chino"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Gallego", "Español"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 3.0}, {"gender": "No quiero responder", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "Italia", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Italiano", "Inglés", "Alemán", "Holandés"], "years": 3.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Perú", "residence": "Perú", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Me gusta explorar la tecnología y disfruto ayudando"], "years": 3.0}, {"gender": "No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Eslovaquia", "residence": "Eslovaquia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Inglés", "Eslovaco"], "years": 4.0}, {"gender": "Mujer cis", "violence": ["Sí, por raza / etnia", "Sí, por lugar de origen", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Filipinas", "residence": "Filipinas", "age": "16-30", "neuro": "No quiero responder", "disability": "No quiero responder", "languages": ["Inglés", "Tagalo/Filipino"], "years": 4.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No quiero responder", "disability": "No", "languages": ["Francés", "Inglés"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Italia", "residence": "Italia", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Italiano (Italia)", "Italiano (Suiza)", "Inglés (Gran Bretaña)", "Inglés (Estados Unidos)", "Alemán (Suiza)", "Esperanto"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "México", "residence": "México", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 4.0}, {"gender": "No quiero responder", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Nepal", "residence": "Nepal", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Nepalí"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Holandés", "Francés", "Alemán", "Italiano", "Flamenco occidental"], "years": 4.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés", "Francés", "Danés", "Noruego", "Sueco"], "years": 4.0}, {"gender": "Mujer cis", "violence": ["Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Brasil", "residence": "Brasil", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Portugues"], "years": 4.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por raza / etnia", "Sí, por idioma", "Sí, por lugar de origen", "Sí, por orientación sexual", "Sí, por edad / nivel de expertise en sus labores", "Otro"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Brasil", "residence": "Brasil", "age": "31-45", "neuro": "No", "disability": "Sí", "languages": ["Portugués", "Inglés"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["español", "Inglés", "francés"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estonia", "residence": "Estonia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Ruso", "Estonian", "Inglés"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Francés", "Inglés"], "years": 4.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "México", "residence": "México", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": true, "exposure": true, "origin": "Italia", "residence": "Italia", "age": "61+", "neuro": "No", "disability": "Sí", "languages": ["Italiano"], "years": 4.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Australia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estonia", "residence": "Estonia", "age": "16-30", "neuro": "Cuestionando", "disability": "Sí", "languages": ["Estonio", "Inglés"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés", "Holandés"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Chequia", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["checo", "español", "Inglés"], "years": 5.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Colombia", "residence": "Colombia", "age": "31-45", "neuro": "No quiero responder", "disability": "No", "languages": ["Español"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "Bélgica", "age": "31-45", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Holandés", "Español", "Francés", "Inglés"], "years": 5.0}, {"gender": "Mujer cis / No binarie", "violence": ["Sí, por género"], "difficulty": true, "notValued": true, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["español", "Catalán", "Inglés", "Frances"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Alemania", "age": "31-45", "neuro": "Cuestionando", "disability": "Cuestionando", "languages": ["Inglés", "Alemán", "Croata", "Ruso"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "Sí", "disability": "Sí", "languages": ["Francés Inglés"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés", "Japonés"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Sueco", "Inglés", "Alemán"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Venezuela", "residence": "España", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["español", "Inglés", "Alemán"], "years": 5.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": true, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Españo. francés hablado y algo de Inglés"], "years": 5.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por lugar de origen", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Uruguay", "residence": "Francia", "age": "46-60", "neuro": "Sí", "disability": "No", "languages": ["Español.  Francés.  Portugués.  Italiano.  Inglés"], "years": 5.0}, {"gender": "Mujer cis", "violence": ["Sí, por idioma", "Sí, por lugar de origen", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Argentina", "residence": "Argentina", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Inglés", "español"], "years": 6.0}, {"gender": "No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No lo sé", "disability": "No", "languages": ["Inglés", "Eslovaco", "Checo"], "years": 6.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Perú", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Español", "Inglés", "Alemán"], "years": 6.0}, {"gender": "No binarie", "violence": ["Sí, por idioma", "Otro"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Canadá", "residence": "Canadá", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Inglés", "Francés"], "years": 6.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["español"], "years": 6.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["español", "Inglés"], "years": 6.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por idioma"], "difficulty": true, "notValued": true, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés", "italiano"], "years": 6.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 6.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Francés", "Inglés"], "years": 6.0}, {"gender": "No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Nicaragua", "residence": "Nicaragua", "age": "31-45", "neuro": "Sí", "disability": "Cuestionando", "languages": ["Español", "Inglés"], "years": 6.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 6.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "16-30", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Alemán"], "years": 7.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Francés", "Holandés", "Inglés"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Francés", "Inglés", "Español", "Mandarín", "Esperanto", "TokiPona"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Francés", "Inglés", "Portugués"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Italiano", "Inglés"], "years": 7.0}, {"gender": "Mujer trans", "violence": ["Otro"], "difficulty": false, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Sí", "disability": "Cuestionando", "languages": ["Inglés", "Español (vacilante)", "Chino (básico)"], "years": 7.0}, {"gender": "Hombre cis", "violence": ["Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Canadá", "residence": "Canadá", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Francés", "Inglés"], "years": 7.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "31-45", "neuro": "Cuestionando", "disability": "Sí", "languages": ["Inglés"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Estados Unidos", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francais", "Inglés", "Español"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés", "Alemán"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Holandés", "Inglés", "Francés"], "years": 7.0}, {"gender": "Mujer trans / Otro", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Panamá", "residence": "Panamá", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Inglés"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "61+", "neuro": "No lo sé", "disability": "No", "languages": ["Inglés", "Alemán", "Griego", "Francés", "Italiano"], "years": 7.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "España", "residence": "España", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "Valenciano / Catalán", "Esperanto"], "years": 8.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por raza / etnia", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Filipinas", "residence": "No responde", "age": "16-30", "neuro": "No quiero responder", "disability": "No quiero responder", "languages": ["Inglés", "Tagalo/Filipino"], "years": 8.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["France"], "years": 8.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por raza / etnia"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Ghana", "residence": "Ghana", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Bolivia", "residence": "Bolivia", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Español", "quechua", "Inglés."], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Español"], "years": 8.0}, {"gender": "Hombre cis", "violence": ["Sí, por idioma"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Catalán", "español"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 8.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Nicaragua", "residence": "Costa Rica", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "Portugués"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Holandés (lengua materna)", "Inglés"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Reino Unido", "residence": "Reino Unido", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 8.0}, {"gender": "Hombre cis", "violence": ["Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "Bolivia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["español", "Inglés", "medio de Portugués", "Francés"], "years": 8.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español e Inglés"], "years": 8.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español e Inglés"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés", "Alemán"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "No lo sé", "disability": "No", "languages": ["Inglés (Gran Bretaña)"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "61+", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán Español Inglés Francés"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "61+", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 8.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "No quiero responder", "neuro": "No", "disability": "No", "languages": ["Catalán"], "years": 8.0}, {"gender": "Mujer trans / No binarie", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "Sí", "disability": "No", "languages": ["Holandés", "Inglés", "Francés"], "years": 9.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Brasil", "residence": "Brasil", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Portugués"], "years": 9.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por idioma", "Sí, por lugar de origen", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Colombia", "residence": "Colombia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés y francés."], "years": 9.0}, {"gender": "Hombre cis", "violence": ["Sí, por idioma"], "difficulty": false, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "inglés", "catalán", "portugués", "gallego", "italiano", "francés", "alemán"], "years": 9.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "Sí", "disability": "No lo sé", "languages": ["Francés"], "years": 9.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Holandés", "Inglés", "Alemán"], "years": 9.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Argentina", "residence": "Argentina", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español"], "years": 9.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Bélgica", "residence": "Bélgica", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Inglés", "Francés", "Holandés"], "years": 9.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "46-60", "neuro": "Cuestionando", "disability": "No", "languages": ["Español"], "years": 9.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés", "un poco de Inglés / un poco de Español / un poquito de criollo (Antillas Francesas)"], "years": 9.0}, {"gender": "Mujer cis", "violence": ["Otro"], "difficulty": true, "notValued": false, "exposure": true, "origin": "México", "residence": "México", "age": "46-60", "neuro": "Sí", "disability": "No", "languages": ["Español", "Inglés", "Francés"], "years": 9.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "No lo sé", "disability": "No", "languages": ["Francés", "Holandés", "Inglés"], "years": 9.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "61+", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 9.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "61+", "neuro": "Cuestionando", "disability": "Cuestionando", "languages": ["Francés", "Inglés (nivel escolar)"], "years": 9.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "No quiero responder", "neuro": "No", "disability": "No", "languages": ["Alemania España inglaterra Francia"], "years": 9.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Brasil", "residence": "Brasil", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Português", "English", "Español"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 10.0}, {"gender": "No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "16-30", "neuro": "Cuestionando", "disability": "No lo sé", "languages": ["Francés", "Inglés", "Alemán"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "India", "residence": "India", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 10.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por idioma", "Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Bolivia", "residence": "Bolivia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Bolivia", "residence": "Bolivia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español"], "years": 10.0}, {"gender": "Hombre cis", "violence": ["Sí, por raza / etnia", "Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Costa Rica", "residence": "Costa Rica", "age": "31-45", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Español", "en menor medida: Inglés", "Portugués"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés", "Lengua de Señas Estadounidense"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "Cuestionando", "disability": "Sí", "languages": ["Francés", "Inglés"], "years": 10.0}, {"gender": "Hombre cis", "violence": ["Otro"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Netherlands", "residence": "Alemania", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Holandés", "Inglés", "Alemán", "Toki Pona"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés Español Francés"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Paraguay", "residence": "Alemania", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "alemán"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Portugal", "residence": "Portugal", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Portugues"], "years": 10.0}, {"gender": "Hombre cis", "violence": ["Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Reino Unido", "residence": "Reino Unido", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés", "Español"], "years": 10.0}, {"gender": "Otro", "violence": ["Sí, por lugar de origen"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Rusia", "residence": "Finlandia", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Inglés", "Finés", "Ruso", "Alemán", "Español"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Ucrania", "residence": "Ucrania", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Inglés", "Ruso"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Australia", "residence": "Australia", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 10.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["español", "Inglés"], "years": 10.0}, {"gender": "Otro", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "Sí", "disability": "Cuestionando", "languages": ["Inglés", "Francés"], "years": 10.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Bélgica", "residence": "Bélgica", "age": "No quiero responder", "neuro": "No quiero responder", "disability": "No quiero responder", "languages": ["Francés", "Holandés", "Inglés"], "years": 10.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés", "Holandés"], "years": 11.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Inglés", "Alemán"], "years": 12.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Austria", "residence": "Austria", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 12.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No quiero responder", "disability": "No", "languages": ["Español"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Finlandia", "residence": "Finlandia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Finés", "Sueco", "Inglés"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Francés", "Inglés", "Alemán"], "years": 12.0}, {"gender": "Mujer cis", "violence": ["Otro"], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés", "Francés", "Holandés"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Holandés", "Inglés", "Español", "Francés"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Uruguay", "residence": "Argentina", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 12.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "46-60", "neuro": "No quiero responder", "disability": "No", "languages": ["Alemán"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Francés", "Inglés"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "Cuestionando", "disability": "No lo sé", "languages": ["Alemán", "Inglés"], "years": 12.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Bélgica", "residence": "Bélgica", "age": "61+", "neuro": "No lo sé", "disability": "No", "languages": ["Holandés Inglés Francés Alemán"], "years": 12.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Uruguay", "residence": "Uruguay", "age": "No quiero responder", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés (la encuensta en español no me funciona)"], "years": 12.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "Italia", "age": "16-30", "neuro": "No", "disability": "No", "languages": ["Español", "Catalán", "Inglés", "Alemán", "Italiano"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán", "Inglés", "Francés"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Italia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés", "Alemán", "Italiano"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Argentina", "residence": "Argentina", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["español"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Español", "Inglés"], "years": 13.0}, {"gender": "Hombre cis", "violence": ["Sí, por idioma", "Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No quiero responder", "disability": "No", "languages": ["Español", "Catalán", "Inglés"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Inglés"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["francais", "Inglés", "Español"], "years": 13.0}, {"gender": "Mujer trans", "violence": ["Sí, por género", "Sí, por orientación sexual"], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés", "Alemán"], "years": 13.0}, {"gender": "Mujer trans / No binarie", "violence": ["Sí, por género", "Sí, por idioma", "Sí, por orientación sexual"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Reino Unido", "residence": "España", "age": "31-45", "neuro": "Sí", "disability": "Sí", "languages": ["Inglés", "español", "Catalán"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés", "Español", "Francés", "Lengua de Señas Alemana"], "years": 13.0}, {"gender": "Mujer cis", "violence": ["Sí, por idioma", "Otro"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "aprendiendo alemán", "mínimo de catalán y francés"], "years": 13.0}, {"gender": "No quiero responder", "violence": ["Otro"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español correcto"], "years": 13.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Australia", "residence": "Australia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 14.0}, {"gender": "Hombre cis", "violence": ["Otro"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Brasil", "residence": "Brasil", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Portugués de Brasil", "Inglés"], "years": 14.0}, {"gender": "Hombre cis", "violence": ["Sí, por idioma", "Sí, por lugar de origen", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Catalán", "Inglés", "Español"], "years": 14.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 14.0}, {"gender": "Mujer cis", "violence": ["Sí, por idioma"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Perú", "residence": "Perú", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Español", "Inglés intermedio"], "years": 14.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Polonia", "residence": "Noruega", "age": "31-45", "neuro": "No lo sé", "disability": "No", "languages": ["Polaco", "Noruego", "Inglés"], "years": 14.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "46-60", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán", "Inglés", "Francés"], "years": 14.0}, {"gender": "Hombre cis", "violence": ["Sí, por género", "Sí, por idioma", "Sí, por orientación sexual", "Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español e Inglés"], "years": 14.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "Sí", "languages": ["Español", "gallego e Inglés"], "years": 14.0}, {"gender": "No quiero responder", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés"], "years": 14.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 15.0}, {"gender": "Mujer trans / No binarie", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Australia", "residence": "Australia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés", "español", "francés"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "Cuestionando", "disability": "No lo sé", "languages": ["Francés", "Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "Sí", "disability": "Sí", "languages": ["Francés", "Inglés"], "years": 15.0}, {"gender": "Mujer cis", "violence": ["Sí, por género", "Sí, por lugar de origen"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Francia", "residence": "México", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Francés", "español", "Inglés"], "years": 15.0}, {"gender": "Otro", "violence": ["Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": false, "exposure": true, "origin": "México", "residence": "México", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["español", "Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": ["Otro"], "difficulty": false, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "Sí", "disability": "No", "languages": ["Inglés", "Alemán", "Polaco"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Rusia", "residence": "Estonia", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Ruso", "Inglés", "Estonio"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Chile", "residence": "Chile", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["español", "portugues"], "years": 15.0}, {"gender": "No quiero responder", "violence": ["Sí, por raza / etnia"], "difficulty": true, "notValued": false, "exposure": true, "origin": "Croacia", "residence": "Croacia", "age": "46-60", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Croata", "Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": ["Sí, por idioma"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "Cuestionando", "disability": "No", "languages": ["Euskera", "español", "Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": ["Sí, por idioma", "Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "catalán"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Netherlands", "residence": "Netherlands", "age": "46-60", "neuro": "No lo sé", "disability": "No", "languages": ["Holandés", "Inglés"], "years": 15.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Venezuela", "residence": "España", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "España", "residence": "España", "age": "61+", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "francés", "Catalán"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "61+", "neuro": "No quiero responder", "disability": "No", "languages": ["Español", "Inglés"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Italia", "residence": "Italia", "age": "61+", "neuro": "No", "disability": "No", "languages": ["Italiano"], "years": 15.0}, {"gender": "No quiero responder", "violence": ["Otro"], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "No quiero responder", "neuro": "No lo sé", "disability": "No quiero responder", "languages": ["Más de 1"], "years": 15.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": true, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "Sí", "disability": "Sí", "languages": ["Alemán", "Inglés", "Sueco"], "years": 16.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Canadá", "residence": "Canadá", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés", "Francés", "Español"], "years": 16.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Español", "gallego"], "years": 16.0}, {"gender": "Mujer cis", "violence": ["Sí, por género"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Francés"], "years": 16.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Austria", "residence": "Austria", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 16.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Chile", "residence": "Chile", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Español", "portugues"], "years": 16.0}, {"gender": "Mujer cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "46-60", "neuro": "Sí", "disability": "No", "languages": ["Inglés"], "years": 16.0}, {"gender": "Hombre cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Francia", "residence": "Francia", "age": "46-60", "neuro": "No", "disability": "No lo sé", "languages": ["Francés", "Inglés"], "years": 16.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Reino Unido", "residence": "Reino Unido", "age": "46-60", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés", "Alemán"], "years": 16.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Alemania", "residence": "Alemania", "age": "61+", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán", "Inglés", "algo de Francés"], "years": 16.0}, {"gender": "Hombre cis", "violence": ["Sí, por género", "Sí, por lugar de origen"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "31-45", "neuro": "Sí", "disability": "Sí", "languages": ["Alemán", "Inglés"], "years": 17.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "España", "residence": "España", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Español", "Inglés", "Catalán"], "years": 17.0}, {"gender": "Hombre cis", "violence": ["Sí, por lugar de origen"], "difficulty": true, "notValued": false, "exposure": true, "origin": "España", "residence": "Reino Unido", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["español", "catalán", "Inglés"], "years": 17.0}, {"gender": "Hombre cis", "violence": ["Sí, por raza / etnia"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Estados Unidos", "residence": "Estados Unidos", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés", "español", "vietnamita"], "years": 17.0}, {"gender": "No quiero responder", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Finlandia", "residence": "Finlandia", "age": "31-45", "neuro": "No quiero responder", "disability": "No quiero responder", "languages": ["Inglés", "Finés"], "years": 17.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "No responde", "residence": "No responde", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Inglés"], "years": 17.0}, {"gender": "Hombre cis", "violence": ["Sí, por idioma", "Sí, por lugar de origen"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Cuba", "residence": "Estados Unidos", "age": "46-60", "neuro": "No quiero responder", "disability": "Cuestionando", "languages": ["Español", "Inglés", "Algo de Francés"], "years": 17.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Hungría", "residence": "Hungría", "age": "46-60", "neuro": "Cuestionando", "disability": "No", "languages": ["Húngaro", "Inglés, (Alemán)"], "years": 17.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Italia", "residence": "Italia", "age": "31-45", "neuro": "Cuestionando", "disability": "No", "languages": ["Italiano", "Inglés"], "years": 18.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Italia", "residence": "Italia", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Italiano", "Inglés"], "years": 18.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Reino Unido", "residence": "Reino Unido", "age": "31-45", "neuro": "No", "disability": "No", "languages": ["Inglés"], "years": 18.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "61+", "neuro": "No lo sé", "disability": "No", "languages": ["Alemán", "Inglés"], "years": 18.0}, {"gender": "No quiero responder", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "Germany", "residence": "Germany", "age": "No quiero responder", "neuro": "No lo sé", "disability": "No lo sé", "languages": ["Alemán", "Inglés", "Francés", "Griego"], "years": 18.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": false, "exposure": false, "origin": "Países Bajos", "residence": "Noruega", "age": "46-60", "neuro": "Sí", "disability": "Sí", "languages": ["Inglés", "Holandés", "Noruego"], "years": 19.0}, {"gender": "Mujer cis", "violence": [], "difficulty": true, "notValued": false, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "46-60", "neuro": "No", "disability": "No", "languages": ["Francés", "Inglés"], "years": 20.0}, {"gender": "Hombre cis", "violence": [], "difficulty": false, "notValued": true, "exposure": true, "origin": "No responde", "residence": "No responde", "age": "61+", "neuro": "No lo sé", "disability": "Sí", "languages": ["Inglés", "Francés"], "years": 20.0}, {"gender": "Hombre cis / Otro", "violence": ["Sí, por género", "Sí, por raza / etnia", "Sí, por idioma", "Sí, por lugar de origen"], "difficulty": false, "notValued": false, "exposure": true, "origin": "Alemania", "residence": "Alemania", "age": "46-60", "neuro": "No lo sé", "disability": "Sí", "languages": ["6"], "years": 42.0}, {"gender": "Otro", "violence": ["Sí, por edad / nivel de expertise en sus labores"], "difficulty": true, "notValued": true, "exposure": true, "origin": "Armenia", "residence": "Afganistán", "age": "61+", "neuro": "No lo sé", "disability": "Cuestionando", "languages": ["😚"], "years": null}], "cats": {"gender": ["Género fluido", "Hombre cis", "Hombre cis / Otro", "Mujer cis", "Mujer cis / No binarie", "Mujer trans", "Mujer trans / No binarie", "Mujer trans / Otro", "No binarie", "No quiero responder", "Otro"], "violence": ["Otro", "Sí, por edad / nivel de expertise en sus labores", "Sí, por género", "Sí, por idioma", "Sí, por lugar de origen", "Sí, por orientación sexual", "Sí, por raza / etnia"], "age": ["-15", "16-30", "31-45", "46-60", "61+", "No quiero responder"], "neuro": ["Cuestionando", "No", "No lo sé", "No quiero responder", "Sí"], "language": ["3", "6", "Alemania España inglaterra Francia", "Alemán", "Alemán (Suiza)", "Alemán Español Inglés Francés", "Algo de Francés", "Bengalí", "Catalán", "Checo", "Chino (básico)", "Croata", "Danés", "ESPAÑOL", "English", "Eslovaco", "Españo. francés hablado y algo de Inglés", "Español", "Español (vacilante)", "Español correcto", "Español e Inglés", "Español.  Francés.  Portugués.  Italiano.  Inglés", "Español. Inglés.", "Español/Inglés", "Esperanto", "Estonian", "Estonio", "Euskera", "Finés", "Flamenco occidental", "Francais", "France", "Frances", "Francés", "Francés Inglés", "Francés Inglés Español Italiano", "Gallego", "Griego", "Hindi", "Holandés", "Holandés (lengua materna)", "Holandés Inglés", "Holandés Inglés Francés Alemán", "Húngaro", "Inglés", "Inglés (Estados Unidos)", "Inglés (Gran Bretaña)", "Inglés (la encuensta en español no me funciona)", "Inglés (nivel escolar)", "Inglés Español Francés", "Inglés en un 40%", "Inglés intermedio", "Inglés medio", "Inglés y francés.", "Inglés, (Alemán)", "Inglés.", "Italiano", "Italiano (Italia)", "Italiano (Suiza)", "Japonés", "Lengua de Señas Alemana", "Lengua de Señas Estadounidense", "Malabar", "Mandarín", "Me gusta explorar la tecnología y disfruto ayudando", "Más de 1", "Nepalí", "Noruego", "Polaco", "Portugues", "Portugués", "Portugués de Brasil", "Português", "Ruso", "Sueco", "Tagalo/Filipino", "Tailandés", "Toki Pona", "TokiPona", "Valenciano / Catalán", "Vasco", "alemán", "algo de Francés", "algunas nociones de Español y Alemán", "aprendiendo alemán", "catalán", "checo", "chino", "en menor medida: Inglés", "español", "francais", "frances", "francés", "français", "galego", "gallego", "gallego e Inglés", "inglés", "italiano", "medio de Portugués", "mínimo de catalán y francés", "portugues", "portugués", "quechua", "un poco de Inglés", "un poco de Inglés / un poco de Español / un poquito de criollo (Antillas Francesas)", "vietnamita", "😚"], "origin": ["Alemania", "Argentina", "Armenia", "Australia", "Austria", "Bolivia", "Brasil", "Bélgica", "Canadá", "Chequia", "Chile", "Colombia", "Costa Rica", "Croacia", "Cuba", "Ecuador", "Eslovaquia", "España", "Estados Unidos", "Estonia", "Filipinas", "Finlandia", "Francia", "Germany", "Ghana", "Hungría", "India", "Italia", "México", "Nepal", "Netherlands", "Nicaragua", "No responde", "Panamá", "Paraguay", "Países Bajos", "Perú", "Polonia", "Portugal", "Reino Unido", "Rusia", "Ucrania", "Uruguay", "Venezuela"], "residence": ["Afganistán", "Alemania", "Argentina", "Australia", "Austria", "Bolivia", "Brasil", "Bélgica", "Canadá", "Chile", "Colombia", "Costa Rica", "Croacia", "Ecuador", "Eslovaquia", "España", "Estados Unidos", "Estonia", "Filipinas", "Finlandia", "Francia", "Germany", "Ghana", "Hungría", "India", "Italia", "México", "Nepal", "Netherlands", "Nicaragua", "No responde", "Noruega", "Panamá", "Paraguay", "Perú", "Portugal", "Reino Unido", "Ucrania", "Uruguay", "Venezuela"]}};
+const tip = document.getElementById("tooltip");
+function tipShow(html,x,y){ tip.innerHTML=html; tip.style.left=(x+12)+'px'; tip.style.top=(y+12)+'px'; tip.classList.add('show'); }
+function tipHide(){ tip.classList.remove('show'); }
+
+let modeDash='public';
+let activeTab='inicio';
+
+const state={
+  gender:'(todes)',
+  violence:'(todes)',
+  country:'(todes)', // applies to current mapMode (residence/origin)
+  age:'(todes)',
+  neuro:'(todes)',
+  lang:'(todes)',
+  mapMode:'residence' // residence | origin
+};
+
+const els={
+  modePublic:document.getElementById('modePublic'),
+  modeInternal:document.getElementById('modeInternal'),
+  publicHook:document.getElementById('publicHook'),
+  adv:document.getElementById('adv'),
+  fGender:document.getElementById('fGender'),
+  fViol:document.getElementById('fViol'),
+  fCountry:document.getElementById('fCountry'),
+  fAge:document.getElementById('fAge'),
+  fNeuro:document.getElementById('fNeuro'),
+  fLang:document.getElementById('fLang'),
+  reset:document.getElementById('reset'),
+  stateBar:document.getElementById('stateBar'),
+  viz:document.getElementById('viz'),
+  panelTitle:document.getElementById('panelTitle'),
+  panelLede:document.getElementById('panelLede'),
+  panelNote:document.getElementById('panelNote'),
+  kpis:document.getElementById('kpis'),
+  insights:document.getElementById('insights'),
+  filterNote:document.getElementById('filterNote'),
+  conclusionCard:document.getElementById('conclusionCard')
+};
+
+function fillSelect(sel, values){
+  sel.innerHTML='';
+  for(const v of values){
+    const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);
+  }
+}
+
+fillSelect(els.fGender, ['(todes)', ...DATA.cats.gender]);
+fillSelect(els.fViol, ['(todes)', ...DATA.cats.violence]);
+fillSelect(els.fAge, ['(todes)', ...DATA.cats.age]);
+fillSelect(els.fNeuro, ['(todes)', ...DATA.cats.neuro]);
+fillSelect(els.fLang, ['(todes)', ...DATA.cats.language]);
+// country options depend on mapMode; set later
+
+document.querySelectorAll('.navbtn').forEach(b=>b.addEventListener('click',()=>{
+  activeTab=b.dataset.tab;
+  document.querySelectorAll('.navbtn').forEach(x=>x.setAttribute('aria-selected', x.dataset.tab===activeTab?'true':'false'));
+  render();
+}));
+
+els.modePublic.addEventListener('click',()=>setMode('public'));
+els.modeInternal.addEventListener('click',()=>setMode('internal'));
+
+function setMode(m){
+  modeDash=m;
+  els.modePublic.setAttribute('aria-selected', m==='public'?'true':'false');
+  els.modeInternal.setAttribute('aria-selected', m==='internal'?'true':'false');
+  els.publicHook.style.display = (m==='public') ? 'block' : 'none';
+  // Public hides advanced filters by default
+  els.adv.open = (m==='internal');
+  render();
+}
+
+function setState(p){
+  Object.assign(state,p);
+  // refresh country options
+  const cats = state.mapMode==='residence' ? DATA.cats.residence : DATA.cats.origin;
+  fillSelect(els.fCountry, ['(todes)', ...cats]);
+  els.fGender.value=state.gender;
+  els.fViol.value=state.violence;
+  els.fCountry.value=state.country;
+  els.fAge.value=state.age;
+  els.fNeuro.value=state.neuro;
+  els.fLang.value=state.lang;
+  render();
+}
+
+els.fGender.addEventListener('change',()=>setState({gender:els.fGender.value}));
+els.fViol.addEventListener('change',()=>setState({violence:els.fViol.value}));
+els.fCountry.addEventListener('change',()=>setState({country:els.fCountry.value}));
+els.fAge.addEventListener('change',()=>setState({age:els.fAge.value}));
+els.fNeuro.addEventListener('change',()=>setState({neuro:els.fNeuro.value}));
+els.fLang.addEventListener('change',()=>setState({lang:els.fLang.value}));
+els.reset.addEventListener('click',()=>setState({
+  gender:'(todes)', violence:'(todes)', country:'(todes)', age:'(todes)', neuro:'(todes)', lang:'(todes)'
+}));
+
+function filteredRecords(){
+  return DATA.records.filter(r=>{
+    if(state.gender!=='(todes)' && r.gender!==state.gender) return false;
+    if(state.violence!=='(todes)' && !r.violence.includes(state.violence)) return false;
+    if(state.age!=='(todes)' && (r.age||'')!==state.age) return false;
+    if(state.neuro!=='(todes)' && (r.neuro||'')!==state.neuro) return false;
+    if(state.lang!=='(todes)' && !(r.languages||[]).includes(state.lang)) return false;
+    if(state.country!=='(todes)'){
+      const c = state.mapMode==='residence' ? (r.residence||'') : (r.origin||'');
+      if(c!==state.country) return false;
+    }
+    return true;
+  });
+}
+
+function pct(n,d){ return d? Math.round((n/d)*1000)/10 : 0; }
+
+function renderStateBar(){
+  els.stateBar.innerHTML='';
+  const pills=[
+    ['Género', state.gender],
+    ['Violencia', state.violence],
+    ['País', state.country==='(todes)' ? '(todes)' : state.country],
+    ['Edad', state.age],
+    ['Neurodivergencia', state.neuro],
+    ['Idioma', state.lang],
+  ];
+  for(const [k,v] of pills){
+    const div=document.createElement('div'); div.className='pill';
+    div.innerHTML = `${k}: <b>${v}</b>`;
+    els.stateBar.appendChild(div);
+  }
+}
+
+function renderKPIs(){
+  const recs=filteredRecords();
+  const n=recs.length;
+  const exposed=recs.filter(r=>r.exposure).length;
+  const exposedPct=pct(exposed,n);
+
+  // top violence
+  const vCounts=new Map();
+  for(const r of recs) for(const v of (r.violence||[])) vCounts.set(v,(vCounts.get(v)||0)+1);
+  const topV=[...vCounts.entries()].sort((a,b)=>d3.descending(a[1],b[1]))[0];
+
+  // country highest exposure (for current mapMode)
+  const byCountry=d3.rollups(recs, rr=>({
+    n: rr.length,
+    exposed: rr.filter(x=>x.exposure).length
+  }), r=> state.mapMode==='residence' ? (r.residence||'(sin dato)') : (r.origin||'(sin dato)'));
+  const best=byCountry.map(([c,o])=>[c, o.n? o.exposed/o.n : 0, o]).sort((a,b)=>d3.descending(a[1],b[1]))[0];
+
+  const boxes=[
+    {n:n, t:'Respuestas (filtradas)'},
+    {n:exposedPct+'%', t:'Índice de exposición'},
+    {n: topV ? topV[0].replace('Sí, ','') : '—', t:'Violencia más reportada'},
+    {n: best ? (best[0]) : '—', t:'Mayor exposición (país)'}
+  ];
+  els.kpis.innerHTML='';
+  for(const b of boxes){
+    const d=document.createElement('div'); d.className='box';
+    d.innerHTML=`<div class="n">${b.n}</div><div class="t">${b.t}</div>`;
+    els.kpis.appendChild(d);
+  }
+
+  // insights text
+  let text = `En este filtro, <b>${exposedPct}%</b> reporta al menos una experiencia negativa (violencia y/o dificultad y/o sentirse poco valoradx).`;
+  if(state.gender==='(todes)'){
+    // compare women cis vs men cis if present
+    const g = d3.group(recs, r=>r.gender);
+    const wc=g.get('Mujer cis'); const hc=g.get('Hombre cis');
+    if(wc && hc){
+      const pW = wc.filter(x=>x.exposure).length / wc.length;
+      const pH = hc.filter(x=>x.exposure).length / hc.length;
+      if(wc.length>=10 && hc.length>=10){
+        const ratio = pH>0 ? (pW/pH) : null;
+        if(ratio) text += ` Mujeres cis reportan exposición ~<b>${Math.round(ratio*10)/10}×</b> respecto a hombres cis (dentro del filtro actual).`;
+      }
+    }
+  }
+  els.insights.innerHTML = text;
+}
+
+function clearViz(){ els.viz.innerHTML=''; }
+
+const panelMeta={
+  inicio:{title:'Explorá los resultados', lede:'Inicio narrativo + KPI interseccional. Usá el modo Interno para exploración profunda.', note:''},
+  mapa:{title:'Mapa: índice de exposición por país', lede:'Por país de residencia u origen. Click en un país para filtrar.', note:'El color representa el % de exposición en ese país (dentro del filtro actual).'},
+  demografia:{title:'Demografía interseccional', lede:'Distribuciones que responden a filtros: edad, neurodivergencia, idioma y años en comunidad.', note:'Hover para detalle. Click para filtrar cuando aplique.'},
+  relaciones:{title:'Género ↔ Violencia', lede:'Bipartito: género a la izquierda, tipos de violencia a la derecha. Grosor = conteo.', note:'Click en un nodo o arco para filtrar.'},
+  conclusiones:{title:'Conclusiones', lede:'Oportunidades de mejora para fortalecer convivencia, cuidado y apoyo.', note:''}
+};
+
+function renderIntro(){
+  const i=DATA.intro;
+  document.getElementById('introText').innerHTML = `
+    Encuesta en <b>${i.languages}</b>. Respondieron <b>${i.respondents}</b> personas.<br/>
+    Países con mayor representación: <b>${i.top_countries.join(', ')}</b>.<br/><br/>
+    Alrededor del <b>${i.cis_men_share}</b> se autodefinen como <b>hombres cis</b>. El <b>${i.unbalanced_share}</b> cree que no hay una representación de género equilibrada en OSM.<br/>
+    ${i.updates}<br/><br/>
+    Rango de edad mayormente representado: <b>${i.age_top}</b>. Promedio de años de participación: <b>${i.avg_years}</b>.
+  `;
+  const stats=[
+    ['Idiomas', i.languages],
+    ['Respuestas', i.respondents],
+    ['Top países', i.top_countries.join(' · ')],
+    ['Hombres cis', i.cis_men_share],
+    ['Edad predominante', i.age_top],
+    ['Prom. años', i.avg_years]
+  ];
+  const grid=document.getElementById('statGrid'); grid.innerHTML='';
+  for(const [k,v] of stats){
+    const d=document.createElement('div'); d.className='stat';
+    d.innerHTML=`<div class="k">${k}</div><div class="v">${v}</div>`;
+    grid.appendChild(d);
+  }
+  const ul=document.getElementById('conclusionList'); ul.innerHTML='';
+  for(const c of DATA.conclusions){ const li=document.createElement('li'); li.textContent=c; ul.appendChild(li); }
+}
+
+async function renderMap(){
+  clearViz();
+  const W=els.viz.clientWidth||900;
+  const width=Math.min(1040, Math.max(720, W));
+  const height=560;
+  const svg=d3.create('svg').attr('viewBox',[0,0,width,height]).style('width','100%').style('height','auto');
+  svg.append('rect').attr('width',width).attr('height',height).attr('fill',DATA.palette.bg);
+
+  // map mode toggle
+  const fo=svg.append('foreignObject').attr('x',14).attr('y',12).attr('width',width-28).attr('height',44);
+  const div=fo.append('xhtml:div').style('display','flex').style('gap','10px').style('align-items','center').style('flex-wrap','wrap');
+  div.append('xhtml:div').style('font-weight','1000').style('color',DATA.palette.p1).style('font-size','12px').text('Mapa:');
+  const mkBtn=(label,val)=>div.append('xhtml:button')
+    .style('border','1px solid rgba(28,27,30,0.12)').style('border-radius','999px').style('padding','7px 10px')
+    .style('background', state.mapMode===val ? 'rgba(69,135,184,0.10)' : '#fff')
+    .style('font-weight','950').style('cursor','pointer').style('color', state.mapMode===val ? DATA.palette.ink : DATA.palette.muted)
+    .text(label).on('click',()=>setState({mapMode:val, country:'(todes)'}));
+  mkBtn('País de residencia','residence');
+  mkBtn('País de origen','origin');
+
+  const world=await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+  const countries=topojson.feature(world, world.objects.countries).features;
+  const proj=d3.geoNaturalEarth1().fitExtent([[16,58],[width-16,height-16]], {type:'FeatureCollection', features:countries});
+  const path=d3.geoPath(proj);
+
+  const recs=filteredRecords();
+  const by = d3.group(recs, r=> state.mapMode==='residence' ? (r.residence||'(sin dato)') : (r.origin||'(sin dato)'));
+
+  // basic ES->EN normalization for matching map names
+  const norm=(s)=> (s||'').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/\p{Diacritic}/gu,'');
+  const ES_EN={'alemania':'germany','brasil':'brazil','estados unidos':'united states of america','reino unido':'united kingdom','espana':'spain','francia':'france','mexico':'mexico','panama':'panama','peru':'peru','costa rica':'costa rica','nicaragua':'nicaragua','colombia':'colombia','argentina':'argentina','chile':'chile','ecuador':'ecuador','paraguay':'paraguay','venezuela':'venezuela','italia':'italy','portugal':'portugal'};
+
+  const stats = new Map();
+  for(const [c,arr] of by.entries()){
+    const exposed = arr.filter(x=>x.exposure).length;
+    const rate = arr.length ? exposed/arr.length : 0;
+    const key = ES_EN[norm(c)] || norm(c);
+    stats.set(key, {n:arr.length, exposed, rate, label:c});
+  }
+
+  function fCount(f){
+    const name = f.properties?.name ?? '';
+    return stats.get(norm(name)) || null;
+  }
+
+  const maxRate = d3.max([...stats.values()], d=>d.rate) || 0.01;
+  const color = d3.scaleSequential(d3.interpolateRgb(DATA.palette.bg, DATA.palette.p2)).domain([0, maxRate]);
+
+  svg.append('text').attr('x',16).attr('y',54).attr('fill',DATA.palette.muted).style('font','12px system-ui')
+    .text('Color = % de exposición. Click para filtrar el país.');
+
+  const g=svg.append('g');
+  g.selectAll('path').data(countries).join('path')
+    .attr('d',path)
+    .attr('fill', d=>{ const s=fCount(d); return s ? color(s.rate) : 'rgba(28,27,30,0.06)'; })
+    .attr('stroke','rgba(28,27,30,0.10)').attr('stroke-width',0.6)
+    .attr('class','clickable')
+    .on('mousemove',(event,d)=>{
+      const name=d.properties?.name ?? '—';
+      const s=fCount(d);
+      if(!s) return tipShow(`<b>${name}</b><br/>Sin datos en el filtro actual.`, event.clientX,event.clientY);
+      tipShow(`<b>${s.label}</b><br/>Respuestas: <b>${s.n}</b><br/>Exposición: <b>${Math.round(s.rate*1000)/10}%</b>`, event.clientX,event.clientY);
+    })
+    .on('mouseleave', tipHide)
+    .on('click',(event,d)=>{
+      const name=d.properties?.name ?? '';
+      const s=fCount(d);
+      if(!s) return;
+      setState({country: (state.country===s.label)?'(todes)':s.label});
+    });
+
+  // legend
+  const lx=16, ly=height-26, lw=220, lh=10;
+  const defs=svg.append('defs');
+  const grad=defs.append('linearGradient').attr('id','grad');
+  grad.append('stop').attr('offset','0%').attr('stop-color','rgba(28,27,30,0.06)');
+  grad.append('stop').attr('offset','100%').attr('stop-color',DATA.palette.p2);
+  svg.append('rect').attr('x',lx).attr('y',ly).attr('width',lw).attr('height',lh).attr('rx',5)
+    .attr('fill','url(#grad)').attr('stroke','rgba(28,27,30,0.10)');
+  svg.append('text').attr('x',lx).attr('y',ly-4).attr('fill',DATA.palette.muted).style('font','12px system-ui').text('0%');
+  svg.append('text').attr('x',lx+lw).attr('y',ly-4).attr('text-anchor','end').attr('fill',DATA.palette.muted).style('font','12px system-ui')
+    .text((Math.round(maxRate*1000)/10)+'%');
+
+  els.viz.appendChild(svg.node());
+}
+
+function renderDemografia(){
+  clearViz();
+  const W=els.viz.clientWidth||900;
+  const width=Math.min(1040, Math.max(720, W));
+  const height=560;
+  const svg=d3.create('svg').attr('viewBox',[0,0,width,height]).style('width','100%').style('height','auto');
+  svg.append('rect').attr('width',width).attr('height',height).attr('fill',DATA.palette.bg);
+
+  const recs=filteredRecords();
+  const dims=[
+    {key:'age', label:'Rango de edad'},
+    {key:'neuro', label:'Neurodivergencia'},
+    {key:'lang', label:'Idioma', multi:true},
+  ];
+
+  const fo=svg.append('foreignObject').attr('x',14).attr('y',12).attr('width',width-28).attr('height',44);
+  const div=fo.append('xhtml:div').style('display','flex').style('gap','10px').style('align-items','center').style('flex-wrap','wrap');
+  div.append('xhtml:div').style('font-weight','1000').style('color',DATA.palette.p1).style('font-size','12px').text('Vista:');
+  const sel=div.append('xhtml:select').style('border','1px solid rgba(28,27,30,0.12)').style('border-radius','14px')
+    .style('padding','8px 10px').style('font-weight','900').style('outline','none');
+  sel.selectAll('option').data(dims).join('option').attr('value',d=>d.key).text(d=>d.label);
+
+  let cur='age';
+
+  const g=svg.append('g').attr('transform','translate(0,70)');
+
+  function getCounts(key){
+    if(key==='lang'){
+      const all=[];
+      for(const r of recs) for(const l of (r.languages||[])) all.push(l);
+      return d3.rollups(all, v=>v.length, d=>d).map(([k,n])=>({label:k,count:n})).sort((a,b)=>d3.descending(a.count,b.count));
+    }
+    return d3.rollups(recs, v=>v.length, r=> (r[key]||'(sin dato)'))
+      .map(([k,n])=>({label:k,count:n})).sort((a,b)=>d3.descending(a.count,b.count));
+  }
+
+  function draw(){
+    g.selectAll('*').remove();
+    const items=getCounts(cur);
+    if(items.length===0){
+      g.append('text').attr('x',16).attr('y',20).attr('fill',DATA.palette.muted).style('font','13px system-ui')
+        .text('Sin datos para este filtro.');
+      return;
+    }
+    const max=d3.max(items,d=>d.count)||1;
+    const left=260, right=28, top=10, rowH=44;
+    const x=d3.scaleLinear().domain([0,max]).range([left,width-right]);
+    const y=d3.scaleBand().domain(items.map(d=>d.label)).range([top, top+items.length*rowH]).padding(0.25);
+
+    const rows=g.selectAll('g.row').data(items,d=>d.label).join('g').attr('transform',d=>`translate(0,${y(d.label)})`);
+    rows.append('line').attr('x1',left).attr('x2',d=>x(d.count)).attr('y1',y.bandwidth()/2).attr('y2',y.bandwidth()/2)
+      .attr('stroke',DATA.palette.p4).attr('stroke-opacity',0.25).attr('stroke-width',10).attr('stroke-linecap','round');
+
+    rows.append('circle').attr('cx',d=>x(d.count)).attr('cy',y.bandwidth()/2).attr('r',7).attr('fill',DATA.palette.p2).attr('opacity',0.92)
+      .attr('class','clickable')
+      .on('click',(event,d)=>{
+        // click-to-filter for matching dimension
+        if(cur==='age') setState({age: state.age===d.label?'(todes)':d.label});
+        if(cur==='neuro') setState({neuro: state.neuro===d.label?'(todes)':d.label});
+        if(cur==='lang') setState({lang: state.lang===d.label?'(todes)':d.label});
+      });
+
+    rows.append('text').attr('x',left-10).attr('y',y.bandwidth()/2+4).attr('text-anchor','end').attr('fill',DATA.palette.ink)
+      .style('font','12px system-ui').text(d=>d.label);
+
+    rows.append('text').attr('x',d=>x(d.count)+10).attr('y',y.bandwidth()/2+4).attr('fill',DATA.palette.muted).style('font','12px system-ui')
+      .text(d=>`${d.count} • ${pct(d.count, recs.length)}%`);
+
+    rows.on('mousemove',(event,d)=>tipShow(`<b>${dims.find(x=>x.key===cur).label}</b><br/>${d.label}: <b>${d.count}</b> (${
+      pct(d.count,recs.length)
+    }%)<br/><span style="opacity:.85">Click para filtrar</span>`, event.clientX,event.clientY))
+    .on('mouseleave', tipHide);
+  }
+
+  sel.on('change',(event)=>{ cur=event.target.value; draw(); });
+  draw();
+  els.viz.appendChild(svg.node());
+}
+
+function renderRelaciones(){
+  clearViz();
+  const W=els.viz.clientWidth||900;
+  const width=Math.min(1040, Math.max(720, W));
+  const height=560;
+  const svg=d3.create('svg').attr('viewBox',[0,0,width,height]).style('width','100%').style('height','auto');
+  svg.append('rect').attr('width',width).attr('height',height).attr('fill',DATA.palette.bg);
+
+  svg.append('text').attr('x',16).attr('y',18).attr('fill',DATA.palette.muted).style('font','12px system-ui')
+    .text('Click en un nodo o arco para filtrar. Grosor = conteo (frecuencia de reporte).');
+
+  const recs=filteredRecords().filter(r=>(r.violence||[]).length>0);
+  const genders = (state.gender==='(todes)') ? DATA.cats.gender : [state.gender];
+  const viols = (state.violence==='(todes)') ? DATA.cats.violence : [state.violence];
+
+  const pairs=[];
+  for(const r of recs) for(const v of r.violence) pairs.push([r.gender,v]);
+  const counts=d3.rollups(pairs, v=>v.length, d=>d[0], d=>d[1])
+    .flatMap(([g,arr])=>arr.map(([v,n])=>({gender:g, violence:v, value:n})))
+    .filter(d=>genders.includes(d.gender) && viols.includes(d.violence));
+
+  const yL=d3.scalePoint().domain(genders).range([70,height-40]).padding(0.8);
+  const yR=d3.scalePoint().domain(viols).range([70,height-40]).padding(0.6);
+
+  const xL=28, xR=width-320;
+  const max=d3.max(counts,d=>d.value)||1;
+  const sw=d3.scaleSqrt().domain([1,max]).range([0.8,12]);
+
+  function bez(xa,ya,xb,yb){ const dx=xb-xa; return `M${xa},${ya} C${xa+dx*0.45},${ya} ${xa+dx*0.55},${yb} ${xb},${yb}`; }
+
+  svg.append('g').attr('fill','none')
+    .selectAll('path').data(counts.filter(d=>d.value>=2))
+    .join('path')
+    .attr('d', d=>bez(xL,yL(d.gender),xR,yR(d.violence)))
+    .attr('stroke', DATA.palette.p4).attr('stroke-opacity',0.25).attr('stroke-width',d=>sw(d.value))
+    .attr('class','clickable')
+    .on('mousemove',(event,d)=>tipShow(`<b>${d.gender}</b> → <b>${d.violence.replace('Sí, ','')}</b><br/>Conteo: <b>${d.value}</b>`, event.clientX,event.clientY))
+    .on('mouseleave', tipHide)
+    .on('click',(event,d)=>setState({
+      gender: state.gender===d.gender ? '(todes)' : d.gender,
+      violence: state.violence===d.violence ? '(todes)' : d.violence
+    }));
+
+  function node(x,y,label,color,kind){
+    const g=svg.append('g').attr('transform',`translate(${x},${y})`).attr('class','clickable')
+      .on('mousemove',(event)=>tipShow(`<b>${label}</b><br/>Click para filtrar`, event.clientX,event.clientY))
+      .on('mouseleave', tipHide)
+      .on('click',()=>{
+        if(kind==='gender') setState({gender: state.gender===label?'(todes)':label});
+        if(kind==='violence') setState({violence: state.violence===label?'(todes)':label});
+      });
+    g.append('circle').attr('r',6).attr('fill',color).attr('opacity',0.95);
+    g.append('text').attr('x',12).attr('y',4).attr('fill',DATA.palette.ink).style('font','12px system-ui').text(label);
+  }
+
+  genders.forEach(g=>node(xL,yL(g),g,DATA.palette.p2,'gender'));
+  viols.forEach(v=>node(xR,yR(v),v.replace('Sí, ',''),DATA.palette.p3,'violence'));
+
+  // small note if too many nodes
+  if(genders.length*viols.length>120){
+    svg.append('text').attr('x',16).attr('y',40).attr('fill',DATA.palette.muted).style('font','12px system-ui')
+      .text('Tip: usá filtros para reducir nodos y ver patrones más claros.');
+  }
+
+  els.viz.appendChild(svg.node());
+}
+
+function renderConclusiones(){
+  clearViz();
+  const box=document.createElement('div');
+  box.className='callout';
+  box.innerHTML = `
+    <div style="font-weight:1000;color:var(--p1);margin-bottom:6px">Líneas de acción comunitaria</div>
+    <ol style="margin:0;padding-left:18px;line-height:1.7">
+      ${DATA.conclusions.map(x=>`<li>${x}</li>`).join('')}
+    </ol>
+  `;
+  els.viz.appendChild(box);
+}
+
+function renderInicio(){
+  clearViz();
+  const recs=filteredRecords();
+  const n=recs.length;
+  const exposed=recs.filter(r=>r.exposure).length;
+  const exposedPct=pct(exposed,n);
+
+  const box=document.createElement('div');
+  box.className='callout';
+  box.innerHTML = `
+    <div style="font-weight:1000;color:var(--p1);margin-bottom:6px">Índice de exposición (según filtros)</div>
+    <div style="font-size:34px;font-weight:1000;color:var(--p1);letter-spacing:-.5px">${exposedPct}%</div>
+    <div style="color:var(--muted);margin-top:6px;line-height:1.6">
+      Porcentaje de personas que reportan <b>≥1</b> experiencia negativa (violencia y/o dificultad para expresarse y/o sentirse poco valoradx).
+    </div>
+  `;
+  els.viz.appendChild(box);
+}
+
+function render(){
+  renderStateBar();
+  renderKPIs();
+
+  const meta=panelMeta[activeTab];
+  els.panelTitle.textContent=meta.title;
+  els.panelLede.textContent=meta.lede;
+  els.panelNote.textContent=meta.note;
+
+  // show conclusions card: always in public; only on tab in internal
+  els.conclusionCard.style.display = (modeDash==='public' || activeTab==='conclusiones') ? 'block' : 'none';
+
+  // Filter note: show sample size
+  const recs=filteredRecords();
+  els.filterNote.innerHTML = `Base filtrada: <b>${recs.length}</b> respuestas.`;
+
+  if(activeTab==='inicio') renderInicio();
+  if(activeTab==='mapa') renderMap();
+  if(activeTab==='demografia') renderDemografia();
+  if(activeTab==='relaciones') renderRelaciones();
+  if(activeTab==='conclusiones') renderConclusiones();
+}
+
+function boot(){
+  renderIntro();
+  setMode('public');
+  // init country select
+  fillSelect(els.fCountry, ['(todes)', ...(DATA.cats.residence||[])]);
+  setState({mapMode:'residence'});
+}
+boot();
+window.addEventListener('resize', ()=>render());
+</script>
+</body>
+</html>
